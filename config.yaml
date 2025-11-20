@@ -1,0 +1,31 @@
+campaign:
+  brand_name: "BaliGlow"
+  campaign_name: "BaliGlow Brand Awareness Q4"
+  duration_days: 30
+  total_budget: 15000
+  start_date: "2024-10-01"
+  
+platforms:
+  google_display:
+    budget_percentage: 0.40
+    avg_cpm: 10
+    avg_ctr: 0.025
+    num_creatives: 3
+    
+  meta:
+    budget_percentage: 0.40
+    avg_cpm: 12.5
+    avg_ctr: 0.015
+    avg_engagement_rate: 0.04
+    num_creatives: 3
+    
+  tiktok:
+    budget_percentage: 0.20
+    avg_cpm: 8
+    avg_ctr: 0.065
+    avg_engagement_rate: 0.10
+    num_creatives: 3
+
+openai:
+  model: "gpt-4"
+  temperature: 0.7
