@@ -110,3 +110,33 @@ class DashboardGeneratorAgent:
             end = date_range.get('end', 'N/A')
             st.metric("Campaign Duration", f"{overall['campaign_days']} days")
             st.caption(f"📅 {start} to {end}")
+    
+    def _render_kpi_cards(self):
+        """Render KPI metrics cards."""
+        st.markdown("---")
+        st.subheader("📊 Executive Summary")
+
+        overall = self.analysis['overall_kpis']
+
+        col1, col2, col3, col4 = st.columns(4)
+
+        with col1:
+            st.metric(
+                "Total Clicks",
+                f"{overall['total_impressions']:,}",
+                help="Total number of times ads were displayed"
+            )
+        
+        with col2:
+            st.metric(
+                "Total Clicks",
+                f"{overall['total_clicks']:,}",
+                help="Total clicks across all platforms"
+            )
+        
+        with col3:
+            st.metric(
+                "Average CTR",
+                f"{overall['average_ctr']}"
+            )
+        
