@@ -15,7 +15,7 @@ class DashboardGeneratorAgent:
     Agent that directly builds and displays an interactive Streamlit dashboard.
     Visualizes campaign performance, trends, and AI-generated insights.
     """
-    def __init__(self, performance_analysis: Dict, insights: Dict, processed_data: pd.Dataframe):
+    def __init__(self, performance_analysis: Dict, insights: Dict, processed_data: pd.DataFrame):
         """
         Initialize Dashboard Generator Agent.
         
@@ -65,12 +65,12 @@ class DashboardGeneratorAgent:
             border-radius: 10px;
             border-left: 5px solid #00d4ff;
             margin: 10px 0;
-        }
+        } 
         </style>
         """, unsafe_allow_html=True)
 
         # Header
-        self._rander_header()
+        self._render_header()
 
         # Executive Summary (KPI Cards)
         self._render_kpi_cards()
@@ -253,7 +253,7 @@ class DashboardGeneratorAgent:
         platform_data = []
         for platform, metrics in self.analysis['platform_analysis'].items():
             platform_data.append({
-                'Platform': platform_data.replace('_', ' ').title(),
+                'Platform': platform.replace('_', ' ').title(),
                 'Impressions': metrics['impressions'],
                 'Clicks': metrics['clicks'],
                 'CTR (%)': metrics['avg_ctr']*100,
@@ -296,4 +296,216 @@ class DashboardGeneratorAgent:
         
         # Cost efficiency comparison
         st.markdown('#### Cost Efficiency Comparison')
-        fig_efficiency = go.Figure
+        fig_efficiency = go.Figure()
+        fig_efficiency.add_trace(go.Bar(
+            name='CPC',
+            x=df_platforms['Platform'],
+            y=df_platforms['CPC ($)'],
+            marker_color='#ff6b6b'
+        ))
+        fig_efficiency.update_layout(
+            yaxis_title="Cost Per Click ($)",
+            template="plotly_dark",
+            height=400
+        )
+        st.plotly_chart(fig_efficiency, use_container_width=True)
+
+        # Budget allocation
+        st.markdown("#### Budget Allocation")
+        fig_budget = px.pie(
+            df_platforms,
+            values='Spend ($)',
+            names='Platform',
+            template="plotly_dark",
+            color_discrete_sequence=['#00d4ff', '#ff6b6b', '#51cf66']
+        )
+        st.plotly_chart(fig_budget, use_container_width=True)
+
+        # Platfrom metrics table
+        with st.expander("📋 View Detailed Platform Metrics"):
+            st.dataframe(df_platforms, use_container_width=True)
+
+    def _render_creative_performance(self):
+        """Render creative performance analysis."""
+        st.markdown("### 🎨 Creative Performance Rankings")
+
+        # Prepare creative data
+        creative_data = []
+        for creative_id, metrics in self.analysis['creative_analysis'].items():
+            creative_data.append({
+                'Creative': creative_id,
+                'Platform': metrics['platform'].replace('_', ' ').title(),
+                'CTR (%)': metrics['avg_ctr']*100,
+                'CPM ($)': metrics['avg_cpm'],
+                'Clicks': metrics['clicks'],
+                'Spend ($)': metrics['spend'],
+                'Renk': metrics.get('rank_by_ctr', 0)
+            })
+        
+        df_creatives = pd.DataFrame(creative_data)
+        df_creatives = df_creatives.sort_values('CTR (%)', ascending=False)
+
+        # Top performers
+        st.markdown("#### 🏆 Top Performing Creatives")
+        top_creatives = df_creatives.head(5)
+
+        fig_top = px.bar(
+            top_creatives,
+            x='Creative',
+            y='CTR (%)',
+            color='Platform',
+            template="plotly_dark",
+            color_discrete_map={
+                'Google Display': '#00d4ff',
+                'Meta': '#ff6b6b',
+                'Tiktok': '#51cf66'
+            }
+        )
+        st.plotly_chart(fig_top, use_container_width=True)
+
+        # Bottom performers
+        st.markdown("#### ⚠️ Underperforming Creatives")
+        bottom_creatives = df_creatives.tail(5)
+
+        fig_bottom = px.bar(
+            bottom_creatives,
+            x='Creative',
+            y='CTR (%)',
+            color='Platform',
+            template="plotly_dark",
+            color_discrete_map={
+                'Google Display': '#00d4ff',
+                'Meta': '#ff6b6b',
+                'Tiktok': '#51cf66'
+            }
+        )
+        st.plotly_chart(fig_bottom, use_container_width=True)
+
+        # Creative comparison by platform
+        for platform in df_creatives['Platform'].unique():
+            platform_creatives = df_creatives[df_creatives['Platform']==platform]
+            
+            with st.expander(f"📊 {platform} Creative Breakdown"):
+                col1, col2 = st.columns(2)
+
+                with col1:
+                    st.markdown("**CTR Comparison**")
+                    fig = px.bar(
+                        platform_creatives,
+                        x='Creative',
+                        y='CTR (%)',
+                        template="plotly_dark"
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                
+                with col2:
+                    st.markdown("**Spend Distribution**")
+                    fig = px.pie(
+                        platform_creatives,
+                        values='Spend ($)',
+                        names='Creative',
+                        template="plotly_dark"
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+        
+        with st.expander("📋 View All Creative Performance Data"):
+            st.dataframe(df_creatives, use_container_width=True)
+
+    def _render_ai_insights(self):
+        """Render AI-generated insights and recommendations."""
+        st.markdown("### 💡 AI-Powered Insights & Recommendations")
+
+        # Priority recommendations
+        st.markdown("#### 🎯 Top Priority Actions")
+
+        priority_recs = self.insights.get('priority_recommendations', [])
+        if priority_recs:
+            for rec in priority_recs:
+                rank = rec.get('rank', '?')
+                insight = rec.get('insight', rec.get('recommendation', 'N/A'))
+                action = rec.get('recommendation', rec.get('action', 'N/A'))
+                impact = rec.get('estimated_impact', rec.get('impact', 'N/A'))
+                urgency = rec.get('urgency', 'unknown').upper()
+
+                # Color coding by urgency
+                if urgency == 'IMMEDIATE':
+                    border_color = '#ff6b6b'
+                    urgency_emoji = '🔴'
+                elif urgency == 'THIS_WEEK':
+                    border_color = '#ffa500'
+                    urgency_emoji = '🟡'
+                else:
+                    border_color = '#00d4ff'
+                    urgency_emoji = '🟢'
+                
+                st.markdown(f"""
+                <div style="background-color: #1e1e1e; padding: 20px; border-radius: 10px; 
+                            border-left: 5px solid {border_color}; margin: 15px 0;">
+                    <h4 style="color: {border_color};">#{rank} {urgency_emoji} {insight}</h4>
+                    <p><strong>📌 Action:</strong> {action}</p>
+                    <p><strong>💰 Impact:</strong> {impact}</p>
+                    <p><strong>⏰ Urgency:</strong> {urgency}</p>
+                </div>
+                """, unsafe_allow_html=True)
+        else:
+            st.info("No priority recommendations available")
+        
+        # Category insights
+        st.markdown("---")
+        st.markdown("#### 📊 Insights by Category")
+
+        insight_tabs = st.tabs([
+            "💰 Budget Efficiency",
+            "🎨 Creative Performance",
+            "⏱️ Ad Fatigue",
+            "📱 Platform Insights"
+        ])
+
+        categories = [
+            ('budget_efficiency', insight_tabs[0]),
+            ('creative_performance', insight_tabs[1]),
+            ('ad_fatigue', insight_tabs[2]),
+            ('platform_insights', insight_tabs[3])
+        ]
+
+        for category_key, tab in categories:
+            with tab:
+                category_insights = self.insights.get(category_key, [])
+
+                if category_insights:
+                    for i, insight in enumerate(category_insights, 1):
+                        insight_text = insight.get('insight', insight.get('observation', 'N/A'))
+                        impact = insight.get('impact', insight.get('business_impact', 'N/A'))
+                        recommendation = insight.get('recommendation', 'N/A')
+                        priority = insight.get('priority', 'medium').upper()
+
+                        with st.expander(f"Insight {i}: {insight_text[:60]}..."):
+                            st.markdown(f"**📊 Finding:** {insight_text}")
+                            st.markdown(f"**💼 Impact:** {impact}")
+                            st.markdown(f"**✅ Recommendation:** {recommendation}")
+                            st.markdown(f"**⚡ Priority:** {priority}")
+                else:
+                    st.info(f"No {category_key.replace('_', ' ')} insights available")
+    
+    def _render_footer(self):
+        """Render dashboard footer"""
+        st.markdown("---")
+
+        col1, col2, co3 = st.columns(3)
+
+        with col1:
+            st.markdown("**🤖 Powered by CampaignIQ**")
+            st.caption("Multi-Agent AI Marketing Analytics System")
+
+        with col2:
+            analysis_time = self.insights.get('metadata', {}).get('generate_at', 'N/A')
+            st.markdown(f"**📅 Analysis Generated**")     
+            st.caption(analysis_time)
+
+        with col3:
+            total_insights = self.insights.get('metadata', {}).get('total_insights', 0)
+            st.markdown(f"**💡 Total Insights**")
+            st.caption(f"{total_insights} insights generated")                   
+
+
+            
