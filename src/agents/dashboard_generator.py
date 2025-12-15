@@ -474,9 +474,9 @@ class DashboardGeneratorAgent:
 
                 if category_insights:
                     for i, insight in enumerate(category_insights, 1):
-                        insight_text = insight.get('insight', insight.get('observation', 'N/A'))
+                        insight_text = insight.get('insight', insight.get('observation', insight.get('strategic_implication', 'N/A')))
                         impact = insight.get('impact', insight.get('business_impact', 'N/A'))
-                        recommendation = insight.get('recommendation', 'N/A')
+                        recommendation = insight.get('recommendation', insight.get('platform_specific_recommendation', 'N/A'))
                         priority = insight.get('priority', 'medium').upper()
 
                         with st.expander(f"Insight {i}: {insight_text[:60]}..."):
